@@ -1,15 +1,42 @@
 import asyncio
 from config import HOST, PORT, BUFFER_SIZE, ENCODING
 
+clients = {}
+
 async def handle_client(reader, writer):
     """
     Handles one connected client
     """
 
     print("Client connected")
-    data = await reader.read(BUFFER_SIZE)
-    message = data.decode(ENCODING)
-    print("Received message:", message)
+
+    #first message contains username
+
+    username_data = await reader.read(BUFFER_SIZE)
+
+    username = username_data.decode(ENCODING)
+
+    clients[writer] = username
+
+    print("Connected users:", clients)
+
+
+    # persistent connection
+    while True:
+
+        data = await reader.read(BUFFER_SIZE)
+
+        if not data:
+            break
+
+        message = data.decode(ENCODING)
+
+        print(f"{username} : {message}")
+
+    del clients[writer]
+
+    print("Connected users:", clients)
+
     writer.close()
 
     await writer.wait_closed()

@@ -2,6 +2,7 @@ import asyncio
 
 from config import HOST, PORT, ENCODING
 
+
 async def main():
     """
     Connect to server and sent one message
@@ -14,15 +15,29 @@ async def main():
 
     print("Connected to server")
 
-    message = "Hello server!!"
+    username = input("Enter your username: ")
     writer.write(
-        message.encode(ENCODING)
+        username.encode(ENCODING)
     )
 
-    writer.drain()
-    print("Message sent")
+    await writer.drain()   ##!!!!!
+
+    #Send multyply messages
+
+    while True:
+        message = input("> ") #запрошення до ведення діалогу
+
+        if message == 'exit':
+            break
+
+        writer .write(message.encode(ENCODING))
+
+        await writer.drain()
+
+    writer.close()
+
     await writer.wait_closed()
 
 if __name__ == "__main__":
     asyncio.run(main())
-#gyjyukgyulhul
+
