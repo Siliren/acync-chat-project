@@ -1,6 +1,6 @@
 import asyncio
 from config import HOST, PORT, BUFFER_SIZE, ENCODING
-from utils import format_message
+from utils import format_message, system_message
 clients = {}
 
 async def broadcast(message):
@@ -25,6 +25,11 @@ async def handle_client(reader, writer):
 
     print("Connected users:", clients)
 
+    await broadcast(
+        system_message(
+            f"{username} joined chat"
+        )
+    )
 
     # persistent connection
     while True:
