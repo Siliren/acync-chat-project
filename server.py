@@ -1,7 +1,12 @@
 import asyncio
 from config import HOST, PORT, BUFFER_SIZE, ENCODING
-
+from utils import format_message
 clients = {}
+
+async def broadcast(message):
+    for writer in clients:
+        writer.write(message.encode(ENCODING))
+        await writer.drain()
 
 async def handle_client(reader, writer):
     """
@@ -29,9 +34,11 @@ async def handle_client(reader, writer):
         if not data:
             break
 
-        message = data.decode(ENCODING)
+        text = data.decode(ENCODING)
 
-        print(f"{username} : {message}")
+        message = format_message(username, text)
+
+        await broadcast(message)
 
     del clients[writer]
 
