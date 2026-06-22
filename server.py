@@ -4,9 +4,18 @@ from utils import format_message, system_message
 clients = {}
 
 async def broadcast(message):
+
+    disconnected = []
+
     for writer in clients:
-        writer.write(message.encode(ENCODING))
-        await writer.drain()
+        try:
+            writer.write(message.encode(ENCODING))
+            await writer.drain()
+        except ConnectionResetError:
+            disconnected.append(writer)
+
+    for writer in disconnected:
+        clients.pop(writer, None)
 
 async def handle_client(reader, writer):
     """
@@ -30,28 +39,37 @@ async def handle_client(reader, writer):
             f"{username} joined chat"
         )
     )
-
-    # persistent connection
-    while True:
-
-        data = await reader.read(BUFFER_SIZE)
-
-        if not data:
-            break
-
-        text = data.decode(ENCODING)
-
-        message = format_message(username, text)
-
-        await broadcast(message)
-
-    del clients[writer]
-
     print("Connected users:", clients)
+    try:
+        # persistent connection
+        while True:
 
-    writer.close()
+            data = await reader.read(BUFFER_SIZE)
 
-    await writer.wait_closed()
+            if not data:
+                break
+
+            text = data.decode(ENCODING)
+
+            message = format_message(username, text)
+
+            await broadcast(message)
+
+    finally:
+
+        del clients[writer]
+
+        await broadcast(
+            system_message(
+                f"{username} left chat"
+            )
+        )
+
+    #print("Connected users:", clients)
+
+        writer.close()
+
+        await writer.wait_closed()
     
 
 async def main():
